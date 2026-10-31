@@ -221,6 +221,8 @@ __marimo__/
 
 # Local interviews and generated life plans
 /outputs/
+/storage/
+/.playwright-cli/
 
 # Node tooling
 node_modules/

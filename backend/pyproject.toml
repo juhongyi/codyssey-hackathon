@@ -7,12 +7,15 @@ dependencies = [
     "fastapi>=0.115,<1",
     "pydantic>=2.11,<3",
     "uvicorn>=0.34,<1",
+    "httpx>=0.28,<1",
+    "psycopg[binary]>=3.2,<4",
 ]
 
 [dependency-groups]
 dev = [
     "import-linter>=2.15",
     "pytest>=8.3,<10",
+    "httpx2>=2,<3",
     "ruff>=0.11,<1",
     "ty>=0.0.1,<1",
 ]
@@ -31,7 +34,7 @@ line-length = 100
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.importlinter]
-root_packages = ["routers", "services", "schemas", "models", "utils"]
+root_packages = ["routers", "services", "schemas", "models", "utils", "agents"]
 
 [[tool.importlinter.contracts]]
 name = "Backend layer direction"

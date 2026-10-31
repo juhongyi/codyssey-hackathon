@@ -1,46 +1,35 @@
 pre-commit:
   parallel: true
   commands:
-    ruff-lint:
-      root: backend
-      glob: "*.py"
-      run: uv run ruff check {staged_files}
-    ruff-format:
-      root: backend
-      glob: "*.py"
-      run: uv run ruff format --check {staged_files}
+    backend:
+      glob: "{backend,agents}/**/*.py"
+      run: |
+        docker compose exec -T backend sh -ec '
+          uv run ruff check .
+          uv run ruff format --check .
+        '
     biome:
-      root: frontend
-      glob: "*.{json,jsonc,js,jsx,ts,tsx,cjs,mjs,css}"
-      run: pnpm exec biome check --no-errors-on-unmatched {staged_files}
+      glob: "frontend/**/*.{json,jsonc,js,jsx,ts,tsx,cjs,mjs,css}"
+      run: docker compose exec -T frontend pnpm exec biome check .
 
 pre-push:
   parallel: true
   commands:
-    ruff-lint:
-      root: backend
-      run: uv run ruff check .
-    ruff-format:
-      root: backend
-      run: uv run ruff format --check .
-    ty:
-      root: backend
-      run: uv run ty check
-    pytest:
-      root: backend
-      run: uv run pytest
-    biome:
-      root: frontend
-      run: pnpm exec biome check .
-    vitest:
-      root: frontend
-      run: pnpm exec vitest run
-    typecheck:
-      root: frontend
-      run: pnpm run typecheck
-    dependency-cruiser:
-      root: frontend
-      run: pnpm run depcruise
-    import-linter:
-      root: backend
-      run: uv run lint-imports
+    backend:
+      run: |
+        docker compose exec -T backend sh -ec '
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run ty check
+          uv run pytest tests agents/tests
+          uv run lint-imports
+        '
+    frontend:
+      run: |
+        docker compose exec -T frontend sh -ec '
+          pnpm exec vitest run
+          pnpm run typecheck
+          pnpm exec biome check .
+          pnpm run depcruise
+          pnpm run build
+        '
