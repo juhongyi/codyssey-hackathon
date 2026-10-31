@@ -221,3 +221,6 @@ __marimo__/
 
 # Local interviews and generated life plans
 /outputs/
+
+# Node tooling
+node_modules/
