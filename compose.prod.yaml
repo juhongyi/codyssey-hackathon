@@ -15,10 +15,23 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile.prod
+      context: .
+      dockerfile: backend/Dockerfile.prod
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      CODYSSEY_API_BASE_URL: ${CODYSSEY_API_BASE_URL:-https://copa.codyssey.kr}
+      CODYSSEY_API_KEY: ${CODYSSEY_API_KEY:-}
+      INTERVIEWER_LLM_MODEL: ${INTERVIEWER_LLM_MODEL:-claude-haiku-4}
+      PLANNER_LLM_MODEL: ${PLANNER_LLM_MODEL:-gpt-5.5}
+      CODYSSEY_TTS_MODEL: ${CODYSSEY_TTS_MODEL:-gpt-4o-mini-tts}
+      CODYSSEY_TTS_VOICE: ${CODYSSEY_TTS_VOICE:-alloy}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID:-}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+      WORKERS_AI_STT_MODEL: ${WORKERS_AI_STT_MODEL:-@cf/openai/whisper-large-v3-turbo}
+      INTERVIEW_MAX_QUESTIONS: ${INTERVIEW_MAX_QUESTIONS:-10}
+      AUDIO_STORAGE_PATH: /app/storage/audio
+    volumes:
+      - ./storage/audio:/app/storage/audio
     depends_on:
       db:
         condition: service_healthy

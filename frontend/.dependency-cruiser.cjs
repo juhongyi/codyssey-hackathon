@@ -29,5 +29,9 @@ module.exports = {
     exclude: "(^|/)(node_modules|\\.venv|dist|outputs)/",
     doNotFollow: { path: "node_modules" },
     tsPreCompilationDeps: true,
+    tsConfig: { fileName: "tsconfig.json" },
+    enhancedResolveOptions: {
+      conditionNames: ["import", "require", "node", "default"],
+    },
   },
 };

@@ -2,10 +2,11 @@ FROM ghcr.io/astral-sh/uv:python3.13-trixie
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock ./
+COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen
 
-COPY . .
+COPY backend/ .
+COPY agents/ ./agents/
 
 EXPOSE 8000
 

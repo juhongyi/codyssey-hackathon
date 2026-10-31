@@ -13,43 +13,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-      - name: Install Python dependencies
-        working-directory: backend
-        run: uv sync --frozen
-      - name: Install Node dependencies
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile
-      - name: Ruff lint
-        working-directory: backend
-        run: uv run ruff check .
-      - name: Ruff format
-        working-directory: backend
-        run: uv run ruff format --check .
-      - name: ty
-        working-directory: backend
-        run: uv run ty check
-      - name: pytest
-        working-directory: backend
-        run: uv run pytest
-      - name: Biome
-        working-directory: frontend
-        run: pnpm exec biome check .
-      - name: Typecheck
-        working-directory: frontend
-        run: pnpm run typecheck
-      - name: Vitest
-        working-directory: frontend
-        run: pnpm exec vitest run
-      - name: Dependency cruiser
-        working-directory: frontend
-        run: pnpm run depcruise
-      - name: Import linter
-        working-directory: backend
-        run: uv run lint-imports
+      - name: Build services
+        run: docker compose build
+      - name: Start PostgreSQL
+        run: docker compose up -d --wait db
+      - name: Backend and agents checks
+        run: |
+          docker compose run --rm --no-deps backend sh -ec '
+            uv run ruff check .
+            uv run ruff format --check .
+            uv run ty check
+            uv run pytest tests agents/tests
+            uv run lint-imports
+          '
+      - name: Frontend checks
+        run: |
+          docker compose run --rm --no-deps frontend sh -ec '
+            pnpm exec vitest run
+            pnpm run typecheck
+            pnpm exec biome check .
+            pnpm run depcruise
+            pnpm run build
+          '

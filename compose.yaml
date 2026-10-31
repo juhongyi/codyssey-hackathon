@@ -2,27 +2,42 @@ services:
   db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-odyssey}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odyssey}
+      POSTGRES_DB: ${POSTGRES_DB:-odyssey}
     ports:
       - "5432:5432"
     volumes:
       - odyssey-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-odyssey} -d ${POSTGRES_DB:-odyssey}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-odyssey}:${POSTGRES_PASSWORD:-odyssey}@db:5432/${POSTGRES_DB:-odyssey}
+      CODYSSEY_API_BASE_URL: ${CODYSSEY_API_BASE_URL:-https://copa.codyssey.kr}
+      CODYSSEY_API_KEY: ${CODYSSEY_API_KEY:-}
+      INTERVIEWER_LLM_MODEL: ${INTERVIEWER_LLM_MODEL:-claude-haiku-4}
+      PLANNER_LLM_MODEL: ${PLANNER_LLM_MODEL:-gpt-5.5}
+      CODYSSEY_TTS_MODEL: ${CODYSSEY_TTS_MODEL:-gpt-4o-mini-tts}
+      CODYSSEY_TTS_VOICE: ${CODYSSEY_TTS_VOICE:-alloy}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID:-}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+      WORKERS_AI_STT_MODEL: ${WORKERS_AI_STT_MODEL:-@cf/openai/whisper-large-v3-turbo}
+      INTERVIEW_MAX_QUESTIONS: ${INTERVIEW_MAX_QUESTIONS:-10}
+      AUDIO_STORAGE_PATH: /app/storage/audio
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./agents:/app/agents
+      - ./storage/audio:/app/storage/audio
       - /app/.venv
     depends_on:
       db:
