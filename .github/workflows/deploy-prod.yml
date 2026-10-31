@@ -1,0 +1,28 @@
+name: Deploy Prod
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.PROD_DEPLOY_SSH_KEY }}
+      - name: Deploy via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new "${{ secrets.PROD_DEPLOY_USER }}@${{ secrets.PROD_DEPLOY_HOST }}" <<'EOF'
+          set -e
+          if [ ! -d /home/ubuntu/odyssey/.git ]; then
+            git clone https://github.com/juhongyi/codyssey-hackathon.git /home/ubuntu/odyssey
+          fi
+          cd /home/ubuntu/odyssey
+          git pull
+          [ -f .env.prod ] || cp .env.example .env.prod
+          docker compose -f compose.prod.yaml --env-file .env.prod up -d --build
+          EOF
