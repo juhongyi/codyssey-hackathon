@@ -20,18 +20,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-          cache: pnpm
       - name: Install Python dependencies
+        working-directory: backend
         run: uv sync --frozen
       - name: Install Node dependencies
+        working-directory: frontend
         run: pnpm install --frozen-lockfile
       - name: Ruff lint
+        working-directory: backend
         run: uv run ruff check .
       - name: Ruff format
+        working-directory: backend
         run: uv run ruff format --check .
       - name: ty
+        working-directory: backend
         run: uv run ty check
       - name: pytest
+        working-directory: backend
         run: uv run pytest
       - name: Biome
+        working-directory: frontend
         run: pnpm exec biome check .
+      - name: Typecheck
+        working-directory: frontend
+        run: pnpm run typecheck
