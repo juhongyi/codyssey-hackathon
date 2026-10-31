@@ -47,11 +47,21 @@ def run_interview(settings: Settings, clients: Clients) -> Path:
     checkpoint(directory, data)
     print(f"세션 저장 위치: {directory.resolve()}", flush=True)
     agent = InterviewAgent(clients)
+    questions_asked = 0
     try:
         while True:
             print("인터뷰 맥락을 정리하는 중…", flush=True)
-            decision = agent.next_turn(data)
+            decision = agent.next_turn(data, questions_asked=questions_asked)
             data.state = decision.state
+            limit_reached = decision.action == "ask" and questions_asked >= settings.max_questions
+            if limit_reached:
+                data.completion = Completion(
+                    status="question_limit_reached",
+                    reason=f"질문 상한 {settings.max_questions}개에 도달했습니다",
+                )
+                decision.speech = (
+                    "정해진 질문을 모두 마쳤습니다. 지금까지 나눈 이야기로 초안을 작성할게요."
+                )
             if decision.action != "ask":
                 data.completion = Completion(
                     status="sufficient" if decision.action == "complete" else "user_stopped",
@@ -79,8 +89,9 @@ def run_interview(settings: Settings, clients: Clients) -> Path:
             utterance.ended_at = datetime.now(UTC)
             utterance.status = "played"
             checkpoint(directory, data)
-            if decision.action != "ask":
+            if decision.action != "ask" or limit_reached:
                 break
+            questions_asked += 1
             number = len(data.conversation) + 1
             relative = f"audio/{number:04d}-user.wav"
             utterance = Utterance(

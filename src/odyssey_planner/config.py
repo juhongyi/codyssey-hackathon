@@ -17,6 +17,7 @@ class Settings(BaseModel):
     cloudflare_api_token: str = ""
     stt_model: str = "@cf/openai/whisper-large-v3-turbo"
     output_dir: Path = Path("outputs")
+    max_questions: int = Field(default=10, ge=1)
     speech_threshold: float = Field(default=0.015, gt=0, lt=1)
     end_silence_seconds: float = Field(default=1.8, ge=0.3)
     start_timeout_seconds: float = Field(default=120, gt=0)
@@ -37,6 +38,7 @@ class Settings(BaseModel):
             "cloudflare_api_token": "CLOUDFLARE_API_TOKEN",
             "stt_model": "CLOUDFLARE_STT_MODEL",
             "output_dir": "ODYSSEY_OUTPUT_DIR",
+            "max_questions": "ODYSSEY_MAX_QUESTIONS",
             "speech_threshold": "ODYSSEY_SPEECH_THRESHOLD",
             "end_silence_seconds": "ODYSSEY_END_SILENCE_SECONDS",
             "start_timeout_seconds": "ODYSSEY_START_TIMEOUT_SECONDS",

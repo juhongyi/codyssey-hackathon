@@ -76,8 +76,20 @@ def test_microphone_failure_is_actionable(tmp_path, monkeypatch):
         audio.record_turn(tmp_path / "failed.wav", Settings())
 
 
-@pytest.mark.parametrize("ending", ["complete", "user_requested_stop"])
-def test_voice_session_to_three_saved_plans(tmp_path, monkeypatch, full_state, draft, ending):
+@pytest.mark.parametrize(
+    ("ending", "max_questions"),
+    [
+        ("complete", 10),
+        ("user_requested_stop", 10),
+        ("complete", 1),
+        ("user_requested_stop", 1),
+        ("ask", 1),
+        ("ask", 2),
+    ],
+)
+def test_voice_session_to_three_saved_plans(
+    tmp_path, monkeypatch, full_state, draft, ending, max_questions
+):
     events = []
     saved_directory = None
 
@@ -97,9 +109,11 @@ def test_voice_session_to_three_saved_plans(tmp_path, monkeypatch, full_state, d
     monkeypatch.setattr(audio, "play", play)
     monkeypatch.setattr(audio, "record_turn", record)
     chat_count = 0
+    retried = False
+    question_count = max_questions if ending == "ask" else 1
 
     def handler(request):
-        nonlocal chat_count
+        nonlocal chat_count, retried
         body = json.loads(request.content)
         if "cloudflare.com" in request.url.host:
             # Recorded audio and pending utterance must already be persisted before STT.
@@ -112,8 +126,11 @@ def test_voice_session_to_three_saved_plans(tmp_path, monkeypatch, full_state, d
             return httpx.Response(
                 200, json={"result": {"b64_json": base64.b64encode(b"mp3").decode()}}
             )
+        if ending == "ask" and not retried:
+            retried = True
+            return httpx.Response(200, json={"choices": [{"message": {"content": "{}"}}]})
         chat_count += 1
-        if chat_count == 1:
+        if chat_count <= question_count:
             payload = {
                 "state": {
                     "summary": "",
@@ -126,15 +143,24 @@ def test_voice_session_to_three_saved_plans(tmp_path, monkeypatch, full_state, d
                 "reason": "첫 질문",
                 "speech": "어떤 순간에 즐거우세요?",
             }
-        elif chat_count == 2:
+        elif chat_count == question_count + 1:
             # The full transcript, not only the latest answer, is handed to the interviewer.
             data = json.loads(body["messages"][1]["content"])
-            assert [u["speaker"] for u in data["conversation"]] == ["assistant", "user"]
+            assert [u["speaker"] for u in data["conversation"]] == [
+                "assistant",
+                "user",
+            ] * question_count
+            assert data["conversation"][-1]["text"] == "함께 배우고 만드는 일이 좋아요"
+            assert f"질문 상한은 {max_questions}개" in body["messages"][0]["content"]
+            assert f"이미 전달한 질문은 {question_count}개" in body["messages"][0]["content"]
+            state = full_state.model_dump(mode="json")
+            if ending == "ask":
+                state["profile"] = []  # Hitting the limit need not imply sufficient context.
             payload = {
-                "state": full_state.model_dump(mode="json"),
+                "state": state,
                 "action": ending,
                 "reason": "충분한 맥락 또는 사용자 요청",
-                "speech": "초안을 작성할게요.",
+                "speech": "추가 질문입니다?" if ending == "ask" else "초안을 작성할게요.",
             }
         else:
             payload = draft
@@ -142,16 +168,26 @@ def test_voice_session_to_three_saved_plans(tmp_path, monkeypatch, full_state, d
             200, json={"choices": [{"message": {"content": json.dumps(payload)}}]}
         )
 
-    settings = Settings(output_dir=tmp_path)
+    settings = Settings(output_dir=tmp_path, max_questions=max_questions)
     with httpx.Client(transport=httpx.MockTransport(handler)) as http:
         path = run_interview(settings, Clients(settings, http))
     plans = PlanningData.model_validate_json(path.read_text())
     interview = InterviewData.model_validate_json(path.with_name("interview.json").read_text())
     assert len(plans.plans) == 3
     assert plans.session_id == interview.session_id
-    assert interview.completion.status == ("sufficient" if ending == "complete" else "user_stopped")
-    assert events == ["play", "record", "play"]
-    assert len(list(path.parent.joinpath("audio").iterdir())) == 3
+    expected_status = {
+        "complete": "sufficient",
+        "user_requested_stop": "user_stopped",
+        "ask": "question_limit_reached",
+    }[ending]
+    assert interview.completion.status == expected_status
+    if ending == "ask":
+        assert not interview.state.has_sufficient_context()
+        assert interview.state.future_directions == full_state.future_directions
+        assert "추가 질문" not in interview.conversation[-1].text
+        assert "초안을 작성" in interview.conversation[-1].text
+    assert events == ["play", "record"] * question_count + ["play"]
+    assert len(list(path.parent.joinpath("audio").iterdir())) == question_count * 2 + 1
     assert path.with_name("conversation.json").exists()
 
 

@@ -76,7 +76,9 @@ class Decision(Record):
 
 
 class Completion(Record):
-    status: Literal["in_progress", "sufficient", "user_stopped", "interrupted"] = "in_progress"
+    status: Literal[
+        "in_progress", "sufficient", "user_stopped", "interrupted", "question_limit_reached"
+    ] = "in_progress"
     reason: str = ""
 
 
