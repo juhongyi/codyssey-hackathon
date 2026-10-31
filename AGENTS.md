@@ -3,3 +3,4 @@
 - KISS: Prefer straightforward code over clever solutions or speculative abstractions.
 - DRY: Consolidate repeated knowledge when the shared intent is clear, not merely similar syntax.
 - YAGNI: Build for validated product needs; defer frameworks and extensibility until required.
+- Compose-first: All development must be performed in the Compose (Docker Compose) environment. Run services via `docker compose` and never rely on host-installed tooling for local development.
