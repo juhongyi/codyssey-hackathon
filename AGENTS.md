@@ -1,0 +1,5 @@
+- TDD: For behavior changes, write a failing test, implement the behavior, then refactor.
+- SRP: Keep each function and module focused on one responsibility.
+- KISS: Prefer straightforward code over clever solutions or speculative abstractions.
+- DRY: Consolidate repeated knowledge when the shared intent is clear, not merely similar syntax.
+- YAGNI: Build for validated product needs; defer frameworks and extensibility until required.
