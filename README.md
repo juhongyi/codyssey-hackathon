@@ -96,10 +96,23 @@ STT 실패 시 재녹음하거나 종료할 수 있습니다. 다른 API·오디
 
 ## 검증
 
+개발 도구는 Python 3.13, Node.js 24, `uv`, `package.json`에 고정된 `pnpm`을 사용합니다.
+
+```bash
+uv sync --frozen
+pnpm install --frozen-lockfile
+pnpm exec lefthook install
+```
+
+커밋 전에는 스테이징된 파일의 Ruff·Biome 검사, 푸시 전에는 아래 전체 검사를 실행합니다.
+검사는 파일을 자동 수정하지 않으며 GitHub Actions에서도 같은 명령을 실행합니다.
+
 ```bash
 uv run ruff check .
 uv run ruff format --check .
+uv run ty check
 uv run pytest
+pnpm exec biome check .
 ```
 
 테스트는 외부 API와 오디오 장치를 대체합니다. 실제 서비스 연동은 `.env` 작성 후 위 실행
