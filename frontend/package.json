@@ -11,7 +11,8 @@
     "start": "next start",
     "check": "biome check .",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "depcruise": "dependency-cruiser ."
   },
   "dependencies": {
     "lucide-react": "^1.66.0",
