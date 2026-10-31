@@ -1,0 +1,66 @@
+name: 범용 이슈
+description: 버그 신고, 기능 요청, 개선 제안, 질문을 남깁니다.
+title: "[유형] 간단한 제목"
+labels: []
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: 유형
+      description: 이슈의 성격을 선택해 주세요.
+      options:
+        - 🐛 버그 신고
+        - ✨ 기능 요청
+        - 🔧 개선 제안
+        - ❓ 질문
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 요약
+      description: 이슈를 한두 문장으로 간단히 설명해 주세요.
+      placeholder: 어떤 문제인지, 어떤 내용인지 요약합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: 상세 내용 / 재현 단계
+      description: 문제가 발생하는 과정이나 원하는 내용을 자세히 적어 주세요.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: 기대 동작 / 실제 동작
+      description: 기대한 동작과 실제로 일어난 동작을 비교해 주세요. (선택)
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경
+      description: OS, 브라우저, Node/Python 버전 등 재현 환경을 적어 주세요. (선택)
+      placeholder: |
+        - OS: macOS 15
+        - 브라우저: Chrome 130
+        - Node: 24.x
+    validations:
+      required: false
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: 첨부 / 스크린샷
+      description: 관련 이미지나 로그를 첨부해 주세요. (선택)
+    validations:
+      required: false
