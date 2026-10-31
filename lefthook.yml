@@ -32,6 +32,15 @@ pre-push:
     biome:
       root: frontend
       run: pnpm exec biome check .
-    # vitest:
-    #   root: frontend
-    #   run: pnpm exec vitest run
+    vitest:
+      root: frontend
+      run: pnpm exec vitest run
+    typecheck:
+      root: frontend
+      run: pnpm run typecheck
+    dependency-cruiser:
+      root: frontend
+      run: pnpm run depcruise
+    import-linter:
+      root: backend
+      run: uv run lint-imports

@@ -44,3 +44,12 @@ jobs:
       - name: Typecheck
         working-directory: frontend
         run: pnpm run typecheck
+      - name: Vitest
+        working-directory: frontend
+        run: pnpm exec vitest run
+      - name: Dependency cruiser
+        working-directory: frontend
+        run: pnpm run depcruise
+      - name: Import linter
+        working-directory: backend
+        run: uv run lint-imports

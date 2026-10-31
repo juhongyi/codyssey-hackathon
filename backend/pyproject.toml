@@ -11,6 +11,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "import-linter>=2.15",
     "pytest>=8.3,<10",
     "ruff>=0.11,<1",
     "ty>=0.0.1,<1",
@@ -28,3 +29,17 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.importlinter]
+root_packages = ["routers", "services", "schemas", "models", "utils"]
+
+[[tool.importlinter.contracts]]
+name = "Backend layer direction"
+type = "layers"
+layers = [
+    "routers",
+    "services",
+    "schemas",
+    "models",
+    "utils",
+]
