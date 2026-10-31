@@ -30,9 +30,6 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
-[tool.ty]
-enabled = true
-
 [tool.importlinter]
 root_packages = ["routers", "services", "schemas", "models", "utils"]
 
