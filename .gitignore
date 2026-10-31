@@ -224,3 +224,10 @@ __marimo__/
 
 # Node tooling
 node_modules/
+!/src/lib/
+!/src/lib/**
+.next/
+*.tsbuildinfo
+.playwright-cli/
+playwright-report/
+test-results/

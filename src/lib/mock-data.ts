@@ -1,0 +1,188 @@
+import type { Plan, Question } from "./types";
+
+export const questions: Question[] = [
+  {
+    id: "energy",
+    title: "최근에 가장 몰입했던 순간은 언제였나요?",
+    hint: "일이나 창작, 혹은 일상의 작은 경험도 좋아요.",
+  },
+  {
+    id: "values",
+    title: "지금의 삶에서 꼭 지키고 싶은 것은 무엇인가요?",
+    hint: "사람, 시간, 나만의 습관까지 무엇이든 괜찮아요.",
+  },
+  {
+    id: "curiosity",
+    title: "마음 한편에 미뤄둔 일이 있나요?",
+    hint: "언젠가 해보고 싶었던 일을 편하게 들려주세요.",
+  },
+  {
+    id: "possibility",
+    title: "아무런 제약이 없다면 어떤 하루를 보내고 싶나요?",
+    hint: "어디에서, 누구와, 무엇을 하는지 상상해 보세요.",
+  },
+  {
+    id: "next",
+    title: "5년 뒤의 나에게 어떤 말을 건네고 싶나요?",
+    hint: "정답은 없어요. 지금 떠오르는 마음이면 충분해요.",
+  },
+];
+
+export const plans: Plan[] = [
+  {
+    id: "a",
+    label: "Plan A",
+    title: "현재 전문성을 살린 단단한 확장",
+    subtitle: "현재 삶 발전",
+    description:
+      "지금의 경험과 강점을 바탕으로 전문성을 쌓고 유연한 업무 환경을 만들어가는 5년",
+    startDate: "2026-10-01",
+    scores: { resource: 85, interest: 75, confidence: 90, coherence: 80 },
+    pieces: [
+      {
+        id: "a1",
+        category: "work",
+        title: "리드 도전",
+        description: "PM 역량 확장",
+        year: 0.3,
+        lane: 0,
+      },
+      {
+        id: "a2",
+        category: "creative",
+        title: "주 2회 그림",
+        description: "드로잉 에세이",
+        year: 1.2,
+        lane: 2,
+      },
+      {
+        id: "a3",
+        category: "work",
+        title: "원격 협업",
+        description: "글로벌 협업 체계",
+        year: 2,
+        lane: 0,
+      },
+      {
+        id: "a4",
+        category: "relationship",
+        title: "가족 캠핑",
+        description: "정기 모임·교류",
+        year: 3.2,
+        lane: 2,
+      },
+      {
+        id: "a5",
+        category: "rest",
+        title: "안식월",
+        description: "자연 속 리셋 여행",
+        year: 4.4,
+        lane: 0,
+      },
+    ],
+  },
+  {
+    id: "b",
+    label: "Plan B",
+    title: "창작 스튜디오와 로컬 커뮤니티",
+    subtitle: "새로운 방향 시도",
+    description:
+      "지금의 길이 사라졌을 때, 손으로 만드는 창작과 동네 기반의 작은 워크숍을 운영하는 삶",
+    startDate: "2026-10-01",
+    scores: { resource: 60, interest: 95, confidence: 65, coherence: 85 },
+    pieces: [
+      {
+        id: "b1",
+        category: "creative",
+        title: "목공 바인딩",
+        description: "손으로 만드는 시간",
+        year: 0.3,
+        lane: 1,
+      },
+      {
+        id: "b2",
+        category: "work",
+        title: "팝업 오픈",
+        description: "작은 실험의 시작",
+        year: 1.2,
+        lane: 0,
+      },
+      {
+        id: "b3",
+        category: "relationship",
+        title: "창작자 모임",
+        description: "함께 만드는 동네",
+        year: 2.2,
+        lane: 2,
+      },
+      {
+        id: "b4",
+        category: "work",
+        title: "작업실 계약",
+        description: "나만의 공간",
+        year: 3.1,
+        lane: 0,
+      },
+      {
+        id: "b5",
+        category: "rest",
+        title: "로컬 스테이",
+        description: "천천히 머무르기",
+        year: 4.3,
+        lane: 2,
+      },
+    ],
+  },
+  {
+    id: "c",
+    label: "Plan C",
+    title: "돈과 시선에서 자유로운 세계 탐험",
+    subtitle: "제약 없는 상상",
+    description:
+      "생계와 평판의 부담이 완전히 사라진다면, 전 세계를 여행하며 글을 쓰고 기록하는 유목민의 삶",
+    startDate: "2026-10-01",
+    scores: { resource: 45, interest: 95, confidence: 55, coherence: 90 },
+    pieces: [
+      {
+        id: "c1",
+        category: "rest",
+        title: "짐 줄이기",
+        description: "가볍게 떠날 준비",
+        year: 0.3,
+        lane: 0,
+      },
+      {
+        id: "c2",
+        category: "creative",
+        title: "남유럽 살기",
+        description: "일상 속 낯선 풍경",
+        year: 1.3,
+        lane: 2,
+      },
+      {
+        id: "c3",
+        category: "creative",
+        title: "사진집 출판",
+        description: "여행의 조각을 모아",
+        year: 2.3,
+        lane: 0,
+      },
+      {
+        id: "c4",
+        category: "relationship",
+        title: "유목 페스티벌",
+        description: "길 위의 친구들",
+        year: 3.2,
+        lane: 2,
+      },
+      {
+        id: "c5",
+        category: "work",
+        title: "여행 에세이",
+        description: "이야기를 나누는 일",
+        year: 4.4,
+        lane: 0,
+      },
+    ],
+  },
+];

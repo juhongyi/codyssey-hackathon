@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <title>밝은 배경 위의 둥근 돌</title>
+  <defs>
+    <radialGradient id="bg"><stop stop-color="#eeeae2"/><stop offset="1" stop-color="#dad7d1"/></radialGradient>
+    <radialGradient id="rock" cx="35%" cy="20%" r="85%"><stop stop-color="#c0b8a4"/><stop offset=".5" stop-color="#a39b85"/><stop offset=".85" stop-color="#827c69"/><stop offset="1" stop-color="#625e50"/></radialGradient>
+    <filter id="shadow"><feGaussianBlur stdDeviation="13"/></filter>
+    <filter id="texture"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="4" seed="21" result="noise"/><feColorMatrix in="noise" type="saturate" values="0" result="mono"/><feComposite in="mono" in2="SourceGraphic" operator="in" result="grain"/><feBlend in="SourceGraphic" in2="grain" mode="soft-light"/></filter>
+    <clipPath id="shape"><path d="M91 199C83 165 109 139 148 139c40-1 120 26 143 56 28 36 9 69-34 76-46 8-110-10-140-32-14-11-23-25-26-40Z"/></clipPath>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h400v400H0z"/>
+  <ellipse cx="213" cy="266" rx="108" ry="19" fill="#514a3a" opacity=".3" filter="url(#shadow)"/>
+  <g filter="url(#texture)"><path d="M91 199C83 165 109 139 148 139c40-1 120 26 143 56 28 36 9 69-34 76-46 8-110-10-140-32-14-11-23-25-26-40Z" fill="url(#rock)"/>
+  <g clip-path="url(#shape)" fill="none" stroke="#e4dfcd" opacity=".32"><path d="M70 162q90 109 250 76M73 172q90 109 250 76M70 186q90 109 250 76M70 144q90 109 250 76" stroke-width="2"/><path d="M90 145q60 100 240 80M90 153q60 100 240 80"/></g></g>
+</svg>

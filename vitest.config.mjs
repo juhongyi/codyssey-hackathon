@@ -4,6 +4,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.{test,spec}.{js,jsx,ts,tsx,mjs,cjs}"],
-    exclude: ["**/node_modules/**", "**/.venv/**", "**/dist/**"],
+    exclude: ["**/node_modules/**", "**/.venv/**", "**/dist/**", "e2e/**"],
   },
 });
