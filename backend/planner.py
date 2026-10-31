@@ -1,14 +1,11 @@
-"""Generate a minimal Odyssey plan from a saved interview; run with uv run planner.py."""
+"""Reusable Odyssey planning engine."""
 
-import argparse
 import json
 import os
-import sys
 from pathlib import Path
 from typing import Literal
 
 import httpx2
-from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 ROOT = Path(__file__).resolve().parent
@@ -68,14 +65,6 @@ class Plan(StrictModel):
         return self
 
 
-def save_json(path: Path, data: dict) -> None:
-    """Replace atomically so an interrupted write does not destroy a checkpoint."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
-
-
 def generate(client: httpx2.Client, interview: Interview) -> Plan:
     key = os.environ.get("CODYSSEY_API_KEY", "").strip()
     if not key:
@@ -123,31 +112,3 @@ def generate(client: httpx2.Client, interview: Interview) -> Plan:
                 ]
             )
     raise AssertionError("unreachable")
-
-
-def main() -> int:
-    load_dotenv(ROOT / ".env")
-    parser = argparse.ArgumentParser(description="인터뷰 JSON에서 세 가지 5개년 플랜 생성")
-    parser.add_argument("interview", type=Path)
-    args = parser.parse_args()
-    try:
-        interview = Interview.model_validate_json(args.interview.read_text(encoding="utf-8"))
-        with httpx2.Client(timeout=float(os.environ.get("API_TIMEOUT_SECONDS", "120"))) as client:
-            plan = generate(client, interview)
-        destination = args.interview.parent / "plan.json"
-        save_json(destination, plan.model_dump())
-        print(f"플랜 저장: {destination}")
-        return 0
-    except httpx2.HTTPStatusError as exc:
-        print(
-            f"API 요청 실패: HTTP {exc.response.status_code}. 인터뷰는 보존됩니다.", file=sys.stderr
-        )
-    except (httpx2.RequestError, OSError, ValueError, KeyError, IndexError, TypeError):
-        print("플랜 생성 실패: 설정·연결·입력 또는 API 응답을 확인하세요.", file=sys.stderr)
-    except KeyboardInterrupt:
-        print("플랜 생성을 중단했습니다. 인터뷰는 보존됩니다.", file=sys.stderr)
-    return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())

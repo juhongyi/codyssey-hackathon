@@ -4,7 +4,7 @@ import httpx2
 import pytest
 from pydantic import ValidationError
 
-import planner
+from backend import planner
 
 
 @pytest.fixture
@@ -73,29 +73,18 @@ def test_generation_repairs_invalid_json(monkeypatch, interview_data, plan_data)
     assert requests[1]["messages"][-1]["role"] == "user"
 
 
-def test_invalid_generation_preserves_existing_plan(monkeypatch, tmp_path, interview_data):
+def test_invalid_generation_retries_once(monkeypatch, interview_data):
     monkeypatch.setenv("CODYSSEY_API_KEY", "test-key")
-    source = tmp_path / "interview.json"
-    planner.save_json(source, interview_data)
-    destination = tmp_path / "plan.json"
-    destination.write_text("previous validated plan")
     calls = []
 
     def handler(request):
         calls.append(request)
         return httpx2.Response(200, json={"choices": [{"message": {"content": "{}"}}]})
 
-    real_client = httpx2.Client
-    monkeypatch.setattr(
-        planner.httpx2,
-        "Client",
-        lambda **kwargs: real_client(transport=httpx2.MockTransport(handler)),
-    )
-    monkeypatch.setattr("sys.argv", ["planner.py", str(source)])
-    assert planner.main() == 1
+    with httpx2.Client(transport=httpx2.MockTransport(handler)) as client:
+        with pytest.raises(ValueError, match="두 번"):
+            planner.generate(client, planner.Interview.model_validate(interview_data))
     assert len(calls) == 2
-    assert destination.read_text() == "previous validated plan"
-    assert json.loads(source.read_text()) == interview_data
 
 
 def test_incomplete_checkpoint_cannot_be_planned(interview_data):

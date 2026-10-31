@@ -1,98 +1,129 @@
-# Odyssey Planner — 콘솔 에이전트
+# Odyssey Planner — 음성 인터뷰 앱
 
-한국어 음성 인터뷰로 필요한 정보를 모으고 서로 다른 세 가지 **5개년 삶의 초안**을
-JSON으로 저장합니다. 과거 구현을 사용하지 않고 새로 작성한 독립 실행 스크립트입니다.
+중앙 버튼을 누르는 동안 말하고 놓으면, FastAPI가 음성을 인식하고 에이전트의 다음
+질문을 음성으로 돌려줍니다. 인터뷰가 끝나면 요약과 서로 다른 세 가지 **5개년 삶의 경로**를
+백엔드 JSON 파일로 저장합니다.
 
 ```text
-마이크 → Workers AI STT → 인터뷰 에이전트 → interview.json
-                            ↓ Codyssey TTS       ↓
-                          질문 재생       플래닝 에이전트 → plan.json
+Next.js: 마이크 녹음 → WAV 업로드 → 대기 → 응답 음성 재생
+                         ↓                    ↑
+FastAPI: 세션 → STT → 인터뷰 엔진 → TTS
+                         ↓ 종료
+                    요약 → 계획 엔진 → JSON 저장
 ```
 
-## 설치
+## 설치 및 실행
 
-Python 3.13과 [uv](https://docs.astral.sh/uv/)를 사용합니다.
+Python 3.13, uv, Node.js 20.9 이상, npm이 필요합니다.
 
 ```bash
 uv sync
 cp .env.example .env
+npm --prefix frontend ci
 ```
 
-`.env`에 다음 인증값을 로컬에서 작성하세요. 실제 키는 공유하거나 커밋하지 마세요.
-
-- `CODYSSEY_API_KEY`: Codyssey virtual key
-- `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`: Workers AI 사용 권한이 있는 계정과 토큰
-
-마이크·스피커와 OS 마이크 권한이 필요합니다. `sounddevice`는 PortAudio를 사용합니다.
-macOS/Windows에서는 일반적으로 함께 설치되며, Linux에서 필요하면 시스템 패키지
-관리자로 PortAudio를 설치하세요. 기본 입출력 장치를 사용합니다.
-
-## 실행
+루트 `.env`에 `CODYSSEY_API_KEY`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`을
+작성한 뒤, 저장소 루트에서 두 터미널로 실행합니다.
 
 ```bash
-uv run interview.py
-uv run planner.py outputs/<session-id>/interview.json
+uv run uvicorn backend.api:app --host 127.0.0.1 --port 8000
 ```
 
-- 질문을 콘솔과 음성으로 제공합니다.
-- Enter로 답변 녹음을 시작하고, 다시 Enter로 종료합니다.
-- 인식 결과를 확인한 뒤 Enter로 확정하거나 `r`로 재녹음합니다.
-- 녹음 시작 전 `q`를 입력하면 조기 종료합니다. 모델의 종료 제안에는 `c`로 계속할 수 있습니다.
-- 최대 질문 수에 도달하면 인터뷰를 마칩니다. 첫 질문·후속 질문 모두 상한에 포함됩니다.
-- 답변이 하나 이상 있으면 종료 시 요약을 저장하고 별도 프로세스로 플랜을 생성합니다.
-- 인터뷰가 완료된 JSON으로 플랜을 다시 생성할 때는 마이크나 Cloudflare 인증이 필요 없습니다.
-- 같은 인터뷰로 다시 생성하면 성공 시 해당 세션의 `plan.json`을 교체합니다.
+```bash
+npm --prefix frontend run dev
+```
+
+브라우저에서 **http://127.0.0.1:3000**을 열고 마이크 권한을 허용하세요.
+브라우저 마이크는 localhost 또는 HTTPS에서 사용할 수 있습니다. 로컬 데모는 FastAPI를
+단일 프로세스로 실행합니다. Next.js가 `/api/*`를 `127.0.0.1:8000`으로 프록시합니다.
+최종 요약·계획 생성 시간을 고려해 Next.js 프록시 응답 제한은 15분으로 설정합니다.
+
+### 버튼 동작
+
+- 첫 누름부터 녹음하며, 놓으면 자동 전송합니다. 처음에는 현재 상황이나 원하는 삶을 말하세요.
+- 녹음 중에는 파란색, API 대기 중에는 회전 애니메이션, 응답 재생 중에는 음성 애니메이션입니다.
+- 처리와 재생 중에는 버튼이 비활성화됩니다. Space/Enter를 누르고 놓는 조작도 지원합니다.
+- 화면에는 버튼만 표시합니다. 질문·인식된 답변·처리 단계·저장 경로는 백엔드 로그에서 확인합니다.
+- 모델이 종료를 판단하거나 최대 턴 수에 도달하면 요약과 계획을 저장하고 완료 음성을 재생합니다.
+  음성으로 인터뷰 종료를 요청할 수도 있습니다.
+- 완료 후 다음 녹음, 또는 새로고침 후 녹음은 새 대화를 시작합니다.
+- 실패는 버튼이 붉게 바뀌며, 다음 누름으로 다시 녹음할 수 있습니다. 자동 재전송은 없습니다.
+  브라우저 마이크·재생 오류는 브라우저 콘솔, 외부 API 오류는 백엔드 로그에서 확인합니다.
+
+## 구조
+
+```text
+backend/
+  api.py           # 세션, 요청, 엔진 호출, 저장, 로그
+  audio.py         # Workers AI STT / Codyssey TTS
+  interview.py     # 텍스트 대화 이력 → 질문, 종료 판단, 요약
+  planner.py       # 요약된 인터뷰 → 3개 경로
+  prompts/         # 인터뷰·계획 프롬프트
+  tests/           # 엔진과 API 테스트
+frontend/
+  app/             # 버튼, 녹음, 업로드, 응답 재생
+  public/recorder.js # AudioWorklet 마이크 캡처
+outputs/           # 세션별 JSON (Git 제외)
+```
+
+에이전트 모듈은 터미널 입력, 로컬 오디오 장치, 파일 저장, 서브프로세스 실행을 담당하지
+않습니다. FastAPI가 엔진을 함수로 호출합니다. 마이크와 재생은 사용자 브라우저가 담당하며
+서버에 PortAudio가 필요하지 않습니다.
+
+## API
+
+**`POST /api/turns?session_id=<UUID>`**
+
+- `Content-Type: audio/wav`, 본문은 모노·16kHz·16비트 PCM WAV 바이트입니다.
+- 첫 요청은 `session_id`를 생략합니다. 후속 요청은 응답에서 받은 ID를 전달합니다.
+- 브라우저는 실제 장치 샘플레이트로 캡처하고 16kHz로 리샘플링하여 WAV를 만듭니다.
+- 녹음 요청당 최대 10 MiB입니다.
+
+```json
+{
+  "session_id": "UUID",
+  "status": "active",
+  "audio": "base64-encoded WAV"
+}
+```
+
+종료 응답의 `status`는 `completed`입니다. 요약과 계획은 응답에 포함하지 않습니다.
+잘못된 WAV는 400, 없는 세션은 404, 완료된 세션은 409, 외부 서비스 등 처리 실패는 502입니다.
+502 응답에는 저장된 체크포인트가 있으면 `session_id`와 현재 `status`를 포함합니다.
 
 ## 설정
 
-`.env.example`은 설정의 기준입니다. 이미 지정된 프로세스 환경변수는 `.env`보다 우선합니다.
+`.env.example`을 기준으로 설정합니다. 프로세스 환경변수는 `.env`보다 우선합니다.
 
 | 환경변수 | 기본값 / 용도 |
 |---|---|
-| `CODYSSEY_BASE_URL` | `https://copa.codyssey.kr` — `/v1`을 붙이지 않은 루트 URL |
-| `INTERVIEW_MODEL` | `claude-haiku-4` |
-| `PLANNING_MODEL` | `claude-haiku-4` |
+| `CODYSSEY_BASE_URL` | `https://copa.codyssey.kr` — `/v1` 없는 루트 URL |
+| `CODYSSEY_API_KEY` | Codyssey virtual key (필수) |
+| `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` | Workers AI 계정·토큰 (필수) |
+| `INTERVIEW_MODEL`, `PLANNING_MODEL` | `claude-haiku-4` |
 | `TTS_MODEL`, `TTS_VOICE` | `tts-1`, `alloy` |
 | `STT_MODEL` | `@cf/openai/whisper-large-v3-turbo` |
-| `MAX_QUESTIONS` | `12` — 1 이상의 정수 |
-| `API_TIMEOUT_SECONDS` | `120` |
-| `OUTPUT_DIR` | `outputs` — 현재 작업 디렉터리 기준 |
+| `MAX_QUESTIONS` | `12` — 시작 발화를 포함한 최대 사용자 턴 수 |
+| `API_TIMEOUT_SECONDS` | `120` — 외부 API 호출별 제한 |
+| `OUTPUT_DIR` | `outputs` — 백엔드 실행 디렉터리 기준 |
 
-대화는 Codyssey의 `/v1/chat/completions`를 사용합니다. TTS는 표준 OpenAI 경로 대신
-`/api/v1/audio/tts`에 `format=wav`, `response_format=b64_json`을 요청하고
-`result.b64_json`에서 오디오를 받습니다. 재생은 16비트 PCM WAV를 기대합니다.
-STT는 Workers AI REST API에 base64 인코딩한 16kHz mono WAV를 보내고 `result.text`를 읽습니다.
-Cloudflare Worker 배포는 필요하지 않습니다.
+대화는 `/v1/chat/completions`, TTS는 `/api/v1/audio/tts`에
+`format=wav`, `response_format=b64_json`을 사용합니다. STT는 Workers AI REST API로
+base64 WAV를 보내고 `result.text`를 읽습니다. 키는 백엔드에서만 사용합니다.
 
-## 데이터
+## 저장 및 실패 처리
 
-실행별 `outputs/<session-id>/`에 저장합니다. 원본 음성은 메모리에서만 사용합니다.
-로컬 문답과 플랜은 Git에서 제외되며, API 처리에 필요한 음성과 텍스트는 각 제공업체로 전송됩니다.
+`outputs/<session-id>/interview.json`에는 `exchanges`, `summary`, 다음 `question`, `status`를
+저장합니다. 첫 발화의 질문 표시는 `사용자의 시작 발화`입니다. 인식된 답변은 모델 호출 전에
+원자적으로 저장하고 요약·다음 질문도 갱신합니다. 원본 음성은 디스크에 저장하지 않습니다.
 
-**`interview.json`**
-- `exchanges`: `question`, `answer`로 구성된 문답 목록
-- `summary`: `current_situation`, `desired_life_and_interests`, `constraints`,
-  `current_path_clues`, `alternative_path_clues`, `unconstrained_path_clues`, `unknowns`
+`plan.json`에는 `current`, `alternative`, `unconstrained` 경로와 각 경로의 1~5년차 방향,
+첫 실험, 가정을 저장합니다. 계획 생성 실패 시 요약과 문답은 보존됩니다. 모델 JSON은
+스키마로 검증하고 한 번만 수정 요청하며, 검증되지 않은 계획을 저장하지 않습니다.
 
-**`plan.json`**
-- `paths`: `current`, `alternative`, `unconstrained` 유형 각각 하나
-- 각 경로: `kind`, `title`, `summary`, `years`(1~5년차 `year`, `direction`),
-  `first_experiment`, `assumptions`(없으면 빈 배열)
-
-프롬프트는 `prompts/`에서 직접 수정할 수 있습니다. 인터뷰는 플랜에 필요한 최소 정보를
-탐색하며, 플랜은 점수나 유형 분류 없이 세 가지 대안을 제시하고 미확인 내용은 가정으로 구분합니다.
-스키마 검증은 구조를 확인하며, 제안의 질과 경로 간 실질적 차이는 사람이 검토해야 합니다.
-
-## 중단과 오류
-
-답변 확정마다 JSON을 원자적으로 교체해 저장합니다. API 오류나 Ctrl+C 시 확정된 답변은
-남지만, 최종 요약 전의 `summary: null` 파일은 플래너 입력으로 사용할 수 없습니다.
-자동 인터뷰 재개는 지원하지 않습니다. `q`로 정상 종료하면 가능한 범위에서 요약·플랜을 만듭니다.
-
-STT 실패 시 재녹음하거나 종료할 수 있습니다. 다른 API·오디오 실패는 오류를 표시하고
-중단합니다. 모델의 JSON이 잘못되면 검증 오류로 한 번 수정 요청하며, 재실패 시 잘못된
-플랜을 저장하지 않습니다. 응답 전체가 JSON 코드 펜스로 감싸진 경우에는 펜스만 제거한 뒤
-동일한 스키마 검증을 적용합니다. 무제한 재시도는 하지 않습니다.
+다음 녹음은 같은 페이지의 세션에서 이어집니다. 새로고침 시 이전 세션을 복원하지 않으며,
+저장된 데이터는 남습니다. 실패 직전에 저장된 질문은 로그로 확인할 수 있습니다.
+여러 동시 요청은 단일 프로세스 내에서 순차 처리됩니다.
 
 ## 검증
 
@@ -100,12 +131,9 @@ STT 실패 시 재녹음하거나 종료할 수 있습니다. 다른 API·오디
 uv run ruff check .
 uv run ruff format --check .
 uv run pytest
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
 ```
 
-테스트는 외부 API와 오디오 장치를 대체합니다. 실제 서비스 연동은 `.env` 작성 후 위 실행
-명령으로 확인하세요. 실제 마이크·스피커 사용은 로컬 환경에서 별도로 확인해야 합니다.
-
-구현 시 실제 Codyssey 대화·요약과 TTS, Workers AI STT를 확인했습니다. 한국어 TTS의
-24kHz mono 16비트 PCM WAV를 STT에 전달해 문장을 인식했고, 샘플 인터뷰에서 세 경로의
-5개년 플랜 JSON을 생성·검증·저장했습니다. 마이크 녹음과 스피커 재생은 이 API 검증에
-포함되지 않습니다.
+Python 테스트는 외부 API를 대체하여 음성 API 계약, 다음 질문, 자동 종료, 저장과 실패 시
+체크포인트 보존을 검증합니다. 실제 공급자 연동에는 로컬 `.env`가 필요합니다.
