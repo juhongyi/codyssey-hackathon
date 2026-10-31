@@ -2,12 +2,15 @@ pre-commit:
   parallel: true
   commands:
     ruff-lint:
+      root: backend
       glob: "*.py"
       run: uv run ruff check {staged_files}
     ruff-format:
+      root: backend
       glob: "*.py"
       run: uv run ruff format --check {staged_files}
     biome:
+      root: frontend
       glob: "*.{json,jsonc,js,jsx,ts,tsx,cjs,mjs,css}"
       run: pnpm exec biome check --no-errors-on-unmatched {staged_files}
 
@@ -15,14 +18,20 @@ pre-push:
   parallel: true
   commands:
     ruff-lint:
+      root: backend
       run: uv run ruff check .
     ruff-format:
+      root: backend
       run: uv run ruff format --check .
     ty:
+      root: backend
       run: uv run ty check
     pytest:
+      root: backend
       run: uv run pytest
     biome:
+      root: frontend
       run: pnpm exec biome check .
     # vitest:
+    #   root: frontend
     #   run: pnpm exec vitest run

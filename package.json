@@ -6,15 +6,9 @@
     "node": "^24.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
-    "dependency-cruiser": "18.7.0",
-    "lefthook": "2.2.2",
-    "vitest": "5.0.5"
+    "lefthook": "2.2.2"
   },
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ],
     "ignoredBuiltDependencies": [
       "lefthook"
     ]
