@@ -44,6 +44,7 @@ async def structured_completion[Output: BaseModel](
     output_type: type[Output],
     *,
     timeout: float = 60,
+    context: dict | None = None,
 ) -> Output:
     key = required_env("CODYSSEY_API_KEY")
     conversation = list(messages)
@@ -58,7 +59,7 @@ async def structured_completion[Output: BaseModel](
             content = ""
             try:
                 content = _message_content(response.json())
-                return output_type.model_validate(parse_json(content))
+                return output_type.model_validate(parse_json(content), context=context)
             except ValueError as exc:
                 if attempt:
                     raise ValueError(

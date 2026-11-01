@@ -1669,15 +1669,19 @@ textarea:focus-visible {
   position: absolute;
   min-height: 78px;
   max-height: 94px;
-  padding: 6px;
+  padding: 6px 0;
   border: 1.5px solid var(--ink);
   border-radius: 5px;
   box-shadow: 2px 2px 0 var(--ink);
   overflow: hidden;
-  transform: rotate(-1deg);
 }
-.board-timeline-piece:nth-child(even) {
-  transform: rotate(1deg);
+.board-timeline-tracks {
+  position: absolute;
+  inset: 0 14px;
+}
+.board-timeline-piece > * {
+  margin-left: 6px;
+  margin-right: 6px;
 }
 .board-timeline-piece strong {
   display: -webkit-box;
