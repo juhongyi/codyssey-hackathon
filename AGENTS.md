@@ -4,3 +4,4 @@
 - DRY: Consolidate repeated knowledge when the shared intent is clear, not merely similar syntax.
 - YAGNI: Build for validated product needs; defer frameworks and extensibility until required.
 - Compose-first: All development must be performed in the Compose (Docker Compose) environment. Run services via `docker compose` and never rely on host-installed tooling for local development.
+- Compose port conflicts: If a port conflict occurs during development, use an available temporary host port to avoid interfering with other running services.
