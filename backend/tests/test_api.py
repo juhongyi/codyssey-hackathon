@@ -1,5 +1,6 @@
 import os
 from types import SimpleNamespace
+from typing import Any
 
 import psycopg
 import pytest
@@ -242,7 +243,9 @@ def test_agent_schema_objects_round_trip(client, monkeypatch):
     response = api.post(f"/api/interviews/{interview['id']}/board")
     assert response.status_code == 200, response.text
     saved = response.json()
-    assert saved["plans"] == generated.model_dump(by_alias=True)["plans"]
+    assert saved["plans"] == [
+        {**plan, "scores": {}} for plan in generated.model_dump(by_alias=True)["plans"]
+    ]
     assert api.put(f"/api/boards/{saved['id']}/plans/A", json=saved["plans"][0]).status_code == 200
 
 
@@ -265,10 +268,12 @@ def test_llm_failure_retains_transcript_before_retry(client):
 
 
 def test_original_provider_json_is_stored_before_planner_normalization(client, monkeypatch):
+    from copy import deepcopy
+
     from agents.schemas import GeneratedBoard
 
     api, _, _ = client
-    original = {
+    original: dict[str, Any] = {
         "provider_note": "retain unknown raw fields",
         "plans": [
             {
@@ -276,6 +281,7 @@ def test_original_provider_json_is_stored_before_planner_normalization(client, m
                 "label": f"Plan {key}",
                 "title": "Future",
                 "description": "A path",
+                "scores": {"confidence": 9},
                 "pieces": [
                     {
                         "id": "provider-piece",
@@ -289,6 +295,9 @@ def test_original_provider_json_is_stored_before_planner_normalization(client, m
             for key in ("C", "B", "A")
         ],
     }
+    expected_raw = deepcopy(original)
+    for plan in expected_raw["plans"]:
+        del plan["scores"]
     generated = GeneratedBoard.model_validate(original)
     generated.plans.sort(key=lambda plan: plan.id)
     for plan in generated.plans:
@@ -306,7 +315,9 @@ def test_original_provider_json_is_stored_before_planner_normalization(client, m
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
         saved = conn.execute("SELECT raw_plan FROM boards WHERE id = %s", (board["id"],)).fetchone()
         assert saved is not None
-        assert saved[0] == original
+        assert saved[0] == expected_raw
+        assert generated.raw_response == original
+        assert all(plan["scores"] == {} for plan in board["plans"])
 
 
 def test_invalid_generation_preserves_existing_board_and_allows_retry(client, monkeypatch):
@@ -355,15 +366,117 @@ def test_startup_retains_boards_audio_and_raw_plan(client):
     files = list(storage.rglob("*.audio"))
     plan = board["plans"][0]
     plan["title"] = "Edited"
+    plan["scores"] = {"resources": 0, "confidence": 10}
     assert api.put(f"/api/boards/{board['id']}/plans/A", json=plan).status_code == 200
     with TestClient(app) as restarted:
         restarted.cookies.update(api.cookies)
         retained = restarted.get("/api/boards/current").json()
         assert retained["id"] == board["id"]
         assert retained["plans"][0]["title"] == "Edited"
+        assert retained["plans"][0]["scores"] == {"resources": 0, "confidence": 10}
         assert all(path.read_bytes() == b"audio" for path in files)
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
         saved = conn.execute("SELECT raw_plan FROM boards WHERE id = %s", (board["id"],)).fetchone()
         assert saved is not None
         raw = saved[0]
         assert raw["plans"][0]["title"] == "Future"
+
+
+def test_self_assessment_is_partial_persistent_and_plan_specific(client):
+    api, _, _ = client
+    interview = complete(api)
+    board = api.post(f"/api/interviews/{interview['id']}/board").json()
+    assert all(plan["scores"] == {} for plan in board["plans"])
+    plan = board["plans"][0]
+    url = f"/api/boards/{board['id']}/plans/A"
+    for scores in (
+        {"resources": 0},
+        {"resources": 0, "liking": 10},
+        {"resources": 0, "liking": 10, "confidence": 0, "coherence": 10},
+    ):
+        plan["scores"] = scores
+        assert api.put(url, json=plan).status_code == 200
+        saved = api.get("/api/boards/current").json()
+        assert saved["plans"][0] == plan
+        assert saved["plans"][1:] == board["plans"][1:]
+    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+        raw = conn.execute("SELECT raw_plan FROM boards WHERE id = %s", (board["id"],)).fetchone()
+        assert raw is not None
+        assert all("scores" not in item for item in raw[0]["plans"])
+
+
+@pytest.mark.parametrize(
+    "scores",
+    [
+        {"resources": -1},
+        {"resources": 11},
+        {"liking": 1.5},
+        {"confidence": "5"},
+        {"coherence": True},
+        {"resources": None},
+        {"energy": 5},
+        {"resource": 5},
+    ],
+)
+def test_invalid_self_assessment_is_rejected(client, scores):
+    api, _, _ = client
+    interview = complete(api)
+    board = api.post(f"/api/interviews/{interview['id']}/board").json()
+    plan = {**board["plans"][0], "scores": scores}
+    assert api.put(f"/api/boards/{board['id']}/plans/A", json=plan).status_code == 400
+    assert api.get("/api/boards/current").json() == board
+
+
+def test_one_time_cleanup_preserves_non_assessment_data(client):
+    from copy import deepcopy
+
+    from psycopg.types.json import Jsonb
+
+    from clear_ai_scores import clear_ai_scores
+
+    api, _, _ = client
+    interview = complete(api)
+    board = api.post(f"/api/interviews/{interview['id']}/board").json()
+    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+        before = conn.execute("SELECT * FROM boards WHERE id = %s", (board["id"],)).fetchone()
+        assert before is not None
+        plans = deepcopy(board["plans"])
+        for plan in plans:
+            plan["scores"] = {"energy": 9, "resources": 8}
+        raw = {"provider_note": "keep", "plans": deepcopy(plans)}
+        conn.execute(
+            "UPDATE boards SET plans = %s, raw_plan = %s WHERE id = %s",
+            (Jsonb(plans), Jsonb(raw), board["id"]),
+        )
+        history = conn.execute(
+            "SELECT * FROM interviews WHERE id = %s", (interview["id"],)
+        ).fetchone()
+        audio = conn.execute(
+            "SELECT * FROM audio_uploads WHERE interview_id = %s", (interview["id"],)
+        ).fetchall()
+        assert clear_ai_scores(conn) >= 1
+        after = conn.execute("SELECT * FROM boards WHERE id = %s", (board["id"],)).fetchone()
+        assert after is not None
+        assert after[:4] == before[:4]
+        for plan in plans:
+            plan["scores"] = {}
+        assert after[-1] == plans
+        for plan in raw["plans"]:
+            del plan["scores"]
+        assert after[-2] == raw
+        assert (
+            conn.execute("SELECT * FROM interviews WHERE id = %s", (interview["id"],)).fetchone()
+            == history
+        )
+        assert (
+            conn.execute(
+                "SELECT * FROM audio_uploads WHERE interview_id = %s", (interview["id"],)
+            ).fetchall()
+            == audio
+        )
+    # Startup must never run the cleanup and erase later user assessments.
+    plan = {**board["plans"][0], "scores": {"resources": 0}}
+    assert api.put(f"/api/boards/{board['id']}/plans/A", json=plan).status_code == 200
+    with TestClient(app) as restarted:
+        restarted.cookies.update(api.cookies)
+        assert restarted.get("/api/boards/current").json()["plans"][0]["scores"] == {"resources": 0}

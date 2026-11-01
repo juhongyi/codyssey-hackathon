@@ -56,7 +56,7 @@ export function PlanCard({
         createdAt={createdAt}
         variant={sample ? "sample" : "board"}
       />
-      {sample && <Ratings scores={plan.scores} />}
+      <Ratings scores={plan.scores} />
     </article>
   );
 }

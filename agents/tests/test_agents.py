@@ -150,7 +150,8 @@ def test_planner_contract_and_unique_uuid_ids(monkeypatch, mock_http):
     ids = [piece.id for plan in board.plans for piece in plan.pieces]
     assert len(set(ids)) == 3
     assert all(str(UUID(piece_id)) == piece_id for piece_id in ids)
-    assert board.plans[0].scores == {}
+    assert "scores" not in board.plans[0].model_dump()
+    assert "scores" not in GeneratedBoard.model_json_schema()["$defs"]["Plan"]["properties"]
     assert "createdAt" not in board.model_dump()
 
 
