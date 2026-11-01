@@ -1226,6 +1226,24 @@ textarea:focus-visible {
   outline-offset: 5px;
   box-shadow: 3px 3px 0 var(--ink);
 }
+.piece-overlap-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--bg-paper);
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  line-height: 14px;
+  font-family: "Gowun Dodum", sans-serif;
+  color: var(--ink);
+  box-shadow: 1px 1px 0 var(--ink);
+  pointer-events: none;
+  z-index: 2;
+  white-space: nowrap;
+}
+
 .piece-body {
   position: absolute;
   inset: 0;

@@ -39,6 +39,33 @@ export function constrainPiece(piece: Piece): Piece {
     lane: Math.max(0, Math.min(3, Math.round(piece.lane))),
   };
 }
+
+export function findOverlappingPieces(
+  piece: Piece,
+  allPieces: Piece[],
+): Piece[] {
+  const pieceEnd = piece.startMonth + piece.durationMonths;
+  return allPieces.filter(
+    (item) =>
+      item.lane === piece.lane &&
+      item.startMonth < pieceEnd &&
+      piece.startMonth < item.startMonth + item.durationMonths,
+  );
+}
+
+export function getNextOverlappingPieceId(
+  currentId: string,
+  allPieces: Piece[],
+): string {
+  const current = allPieces.find((item) => item.id === currentId);
+  if (!current) return currentId;
+  const overlapping = findOverlappingPieces(current, allPieces);
+  if (overlapping.length <= 1) return currentId;
+  const currentIndex = overlapping.findIndex((item) => item.id === currentId);
+  const nextIndex = (currentIndex + 1) % overlapping.length;
+  return overlapping[nextIndex].id;
+}
+
 export type History = { past: Piece[][]; present: Piece[]; future: Piece[][] };
 export type EditAction =
   | { type: "commit"; pieces: Piece[] }

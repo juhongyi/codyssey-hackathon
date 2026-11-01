@@ -3,6 +3,8 @@ import {
   constrainPiece,
   createHistory,
   editHistory,
+  findOverlappingPieces,
+  getNextOverlappingPieceId,
   resizePiece,
 } from "./editor-state";
 import type { Piece } from "./types";
@@ -76,5 +78,45 @@ describe("five-year planning", () => {
     });
     expect(state.present).toHaveLength(2);
     expect(state.present[0].startMonth).toBe(state.present[1].startMonth);
+  });
+});
+
+describe("overlapping pieces selection", () => {
+  it("finds all overlapping pieces in the same lane and excludes other lanes or non-overlapping ranges", () => {
+    const duplicate = { ...piece, id: "duplicate", title: "복제본" };
+    const partial = {
+      ...piece,
+      id: "partial",
+      startMonth: 18,
+      durationMonths: 10,
+    };
+    const adjacent = {
+      ...piece,
+      id: "adjacent",
+      startMonth: 22,
+      durationMonths: 5,
+    };
+    const otherLane = { ...piece, id: "otherLane", lane: 1 };
+    const allPieces = [piece, duplicate, partial, adjacent, otherLane];
+
+    const overlaps = findOverlappingPieces(piece, allPieces);
+    expect(overlaps.map((p) => p.id)).toEqual(["one", "duplicate", "partial"]);
+  });
+
+  it("cycles to the next overlapping piece in a cluster", () => {
+    const pieceA = { ...piece, id: "a" };
+    const pieceB = { ...piece, id: "b" };
+    const pieceC = { ...piece, id: "c" };
+    const allPieces = [pieceA, pieceB, pieceC];
+
+    expect(getNextOverlappingPieceId("a", allPieces)).toBe("b");
+    expect(getNextOverlappingPieceId("b", allPieces)).toBe("c");
+    expect(getNextOverlappingPieceId("c", allPieces)).toBe("a");
+  });
+
+  it("returns current id when no overlapping pieces exist", () => {
+    const solitary = { ...piece, id: "solo", startMonth: 0, durationMonths: 5 };
+    const other = { ...piece, id: "other", startMonth: 30, durationMonths: 5 };
+    expect(getNextOverlappingPieceId("solo", [solitary, other])).toBe("solo");
   });
 });

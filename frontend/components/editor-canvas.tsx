@@ -5,7 +5,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { constrainPiece, resizePiece } from "../lib/editor-state";
+import {
+  constrainPiece,
+  findOverlappingPieces,
+  getNextOverlappingPieceId,
+  resizePiece,
+} from "../lib/editor-state";
 import type { Piece } from "../lib/types";
 import { MinimapBar } from "./minimap-bar";
 import { NoteCard } from "./note-card";
@@ -17,6 +22,8 @@ type Gesture = {
   y: number;
   width: number;
   next: Piece;
+  hasMoved: boolean;
+  wasSelected: boolean;
 };
 export function EditorCanvas({
   pieces,
@@ -38,6 +45,7 @@ export function EditorCanvas({
   const viewport = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLElement>(null);
   const gesture = useRef<Gesture | null>(null);
+  const lastGesture = useRef<Gesture | null>(null);
   const [preview, setPreview] = useState<Piece | null>(null);
   const [view, setView] = useState({ start: 0, span: 1 });
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -74,6 +82,7 @@ export function EditorCanvas({
     if (pointers.current.size > 1) return;
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
+    const wasSelected = selected === piece.id;
     onSelect(piece.id);
     gesture.current = {
       piece,
@@ -82,11 +91,17 @@ export function EditorCanvas({
       y: event.clientY,
       width: canvas.current?.clientWidth || 1,
       next: piece,
+      hasMoved: false,
+      wasSelected,
     };
   }
   function move(event: ReactPointerEvent<HTMLElement>) {
     const active = gesture.current;
     if (!active) return;
+    const dist = Math.hypot(event.clientX - active.x, event.clientY - active.y);
+    if (dist > 5) {
+      active.hasMoved = true;
+    }
     const delta = Math.round(((event.clientX - active.x) / active.width) * 60);
     let next = { ...active.piece };
     if (active.mode === "move")
@@ -98,12 +113,31 @@ export function EditorCanvas({
     if (active.mode !== "move")
       next = resizePiece(active.piece, active.mode, delta);
     active.next = next;
-    setPreview(next);
+    if (active.hasMoved) {
+      setPreview(next);
+    }
   }
   function finish(cancel = false) {
-    if (gesture.current && !cancel) onChange(gesture.current.next);
+    if (gesture.current && !cancel && gesture.current.hasMoved) {
+      onChange(gesture.current.next);
+    }
+    lastGesture.current = gesture.current;
     gesture.current = null;
     setPreview(null);
+  }
+  function handleClick(piece: Piece) {
+    const g = lastGesture.current;
+    if (g && g.piece.id === piece.id && g.hasMoved) {
+      return;
+    }
+    const isAlreadySelected =
+      g && g.piece.id === piece.id ? g.wasSelected : selected === piece.id;
+    if (isAlreadySelected) {
+      const nextId = getNextOverlappingPieceId(piece.id, pieces);
+      onSelect(nextId);
+    } else {
+      onSelect(piece.id);
+    }
   }
   const base = new Date(createdAt);
   function pointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -196,10 +230,12 @@ export function EditorCanvas({
           <div className="editor-baseline" />
           {pieces.map((original) => {
             const piece = preview?.id === original.id ? preview : original;
+            const isSelected = selected === piece.id;
+            const overlaps = findOverlappingPieces(piece, pieces);
             return (
               <div
                 key={piece.id}
-                className={`editor-piece ${piece.category} ${selected === piece.id ? "selected" : ""}`}
+                className={`editor-piece ${piece.category} ${isSelected ? "selected" : ""}`}
                 style={{
                   left: `${(piece.startMonth / 60) * 100}%`,
                   width: `${(piece.durationMonths / 60) * 100}%`,
@@ -209,16 +245,21 @@ export function EditorCanvas({
                 <button
                   type="button"
                   className="piece-body"
-                  aria-pressed={selected === piece.id}
-                  onClick={() => onSelect(piece.id)}
+                  aria-pressed={isSelected}
+                  onClick={() => handleClick(piece)}
                   onPointerDown={(event) => begin(event, piece, "move")}
                   onPointerMove={move}
                   onPointerUp={() => finish()}
                   onPointerCancel={() => finish(true)}
                 >
                   <NoteCard piece={piece} />
+                  {overlaps.length > 1 && (
+                    <span className="piece-overlap-badge">
+                      중첩 {overlaps.length}
+                    </span>
+                  )}
                 </button>
-                {selected === piece.id && (
+                {isSelected && (
                   <>
                     <button
                       type="button"
