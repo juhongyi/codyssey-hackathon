@@ -1,7 +1,7 @@
 [project]
 name = "odyssey-backend"
 version = "0.1.0"
-description = "ODYSSEY life design journal API"
+description = "Ople life design journal API"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115,<1",

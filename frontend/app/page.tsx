@@ -7,10 +7,10 @@ export default function Home() {
   return (
     <>
       <header className="site-header">
-        <Link href="/" className="brand" aria-label="오딧세이 홈">
+        <Link href="/" className="brand" aria-label="오플 홈">
           <span className="brand-star">★</span>
           <span>
-            <strong>ODYSSEY</strong>
+            <strong>Ople</strong>
             <small>라이프 디자인 저널</small>
           </span>
         </Link>
@@ -100,7 +100,7 @@ export default function Home() {
         <button className="login-placeholder" type="button" disabled>
           로그인 · 준비 중
         </button>
-        <small>© 2026 ODYSSEY. Every life, a new chapter.</small>
+        <small>© 2026 Ople. Every life, a new chapter.</small>
       </footer>
     </>
   );

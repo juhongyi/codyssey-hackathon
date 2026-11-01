@@ -85,7 +85,7 @@ export function PlanEditor({
         >
           <ArrowLeft size={17} /> 라이프 보드
         </button>
-        <h1>오딧세이 편집</h1>
+        <h1>오플 편집</h1>
         {saving.status === "saved" ? (
           <button
             type="button"

@@ -16,7 +16,7 @@ export function Timeline({
     return (
       <section
         className="board-timeline"
-        aria-label="5년 오딧세이 타임라인"
+        aria-label="5년 오플 타임라인"
         style={{
           height: `${Math.max(300, 182 + Math.max(0, ...pieces.map((piece) => piece.lane)) * 104)}px`,
         }}
