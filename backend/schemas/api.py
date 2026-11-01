@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -29,7 +29,10 @@ class Plan(BaseModel):
     title: str
     description: str
     pieces: list[Piece]
-    scores: dict[str, int]
+    scores: dict[
+        Literal["resources", "liking", "confidence", "coherence"],
+        Annotated[int, Field(ge=0, le=10, strict=True)],
+    ]
 
     @model_validator(mode="after")
     def valid_identity(self):

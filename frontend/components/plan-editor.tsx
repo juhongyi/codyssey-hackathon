@@ -18,6 +18,7 @@ import type { Board, Piece, Plan } from "../lib/types";
 import { usePlanSave } from "../lib/use-plan-save";
 import { EditorCanvas } from "./editor-canvas";
 import { PieceSheet } from "./piece-sheet";
+import { Ratings } from "./rating-bar";
 
 export function PlanEditor({
   board,
@@ -34,9 +35,10 @@ export function PlanEditor({
   const [selected, setSelected] = useState<string | null>(null);
   const [sheet, setSheet] = useState<{ piece: Piece | null } | null>(null);
   const [zoom, setZoom] = useState(2);
+  const [scores, setScores] = useState(initialPlan.scores);
   const plan = useMemo(
-    () => ({ ...initialPlan, pieces: history.present }),
-    [initialPlan, history.present],
+    () => ({ ...initialPlan, pieces: history.present, scores }),
+    [initialPlan, history.present, scores],
   );
   const saving = usePlanSave(board.id, plan);
   const router = useRouter();
@@ -116,6 +118,11 @@ export function PlanEditor({
           <i />
           {statusLabel}
         </div>
+      </section>
+      <section className="editor-assessment" aria-label="플랜 자기평가">
+        <h2>나의 자기평가</h2>
+        <p>각 항목을 0~10점으로 평가해요. 입력한 항목만 자동 저장돼요.</p>
+        <Ratings scores={scores} onChange={setScores} />
       </section>
       <div className="editor-toolbar" role="toolbar" aria-label="편집 도구">
         <button

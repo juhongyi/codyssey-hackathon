@@ -10,6 +10,7 @@ from psycopg.types.json import Jsonb
 from models.database import connection
 from schemas.api import GeneratedBoard
 from services import providers
+from utils.assessments import without_generated_scores
 
 MAX_AUDIO_BYTES = 25 * 1024 * 1024
 
@@ -144,6 +145,12 @@ async def generate(conn, row, session):
     original = getattr(raw, "raw_response", None)
     if hasattr(raw, "model_dump"):
         raw = raw.model_dump(mode="json", by_alias=True)
+    raw = without_generated_scores(raw)
+    original = without_generated_scores(jsonable_encoder(original) if original is not None else raw)
+    if isinstance(raw, dict) and isinstance(raw.get("plans"), list):
+        for plan in raw["plans"]:
+            if isinstance(plan, dict):
+                plan["scores"] = {}
     try:
         validated = GeneratedBoard.model_validate(raw)
     except ValueError as exc:
@@ -156,7 +163,7 @@ async def generate(conn, row, session):
             board_id,
             row["id"],
             session,
-            Jsonb(jsonable_encoder(original) if original is not None else raw),
+            Jsonb(original),
             Jsonb([plan.model_dump() for plan in validated.plans]),
         ),
     )

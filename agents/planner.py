@@ -18,7 +18,7 @@ title과 description은 모두 한국어로 작성하세요. 반드시 아래 �
 startMonth는 현재부터 상대적인 월 번호 0~59, durationMonths는 1~60이고
 startMonth + durationMonths <= 60이어야 합니다. lane은 0~3의 정수입니다.
 구체적인 달력 날짜나 createdAt, interviewId 등 서버 메타데이터를 생성하지 마세요.
-scores는 필요한 경우에만 정수 값의 객체로 제공하세요.
+자기평가는 사용자가 직접 입력합니다. scores나 평가 점수를 생성하지 마세요.
 """
 
 

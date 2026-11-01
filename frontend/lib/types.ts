@@ -8,13 +8,16 @@ export type Piece = {
   durationMonths: number;
   lane: number;
 };
+export type Scores = Partial<
+  Record<"resources" | "liking" | "confidence" | "coherence", number>
+>;
 export type Plan = {
   id: "A" | "B" | "C";
   label: string;
   title: string;
   description: string;
   pieces: Piece[];
-  scores: Record<string, number>;
+  scores: Scores;
 };
 export type Board = {
   id: string;

@@ -43,7 +43,6 @@ class Plan(BaseModel):
     title: str
     description: str
     pieces: list[Piece]
-    scores: dict[str, int] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_label(self) -> Self:

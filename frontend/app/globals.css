@@ -466,6 +466,22 @@ textarea:focus-visible {
 .rating small {
   font-size: 10px;
 }
+.rating-slider {
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+}
+.editor-assessment {
+  margin: 0 16px 16px;
+}
+.editor-assessment h2 {
+  font-size: 16px;
+}
+.editor-assessment p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 8px 0;
+}
 .rating-track {
   height: 8px;
   border: 1px solid #4b443a;
