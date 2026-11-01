@@ -22,7 +22,7 @@ jobs:
             git clone https://github.com/juhongyi/codyssey-hackathon.git /home/ubuntu/odyssey
           fi
           cd /home/ubuntu/odyssey
-          git pull
+          git fetch origin && git reset --hard origin/main
           [ -f .env.prod ] || cp .env.example .env.prod
           docker compose -f compose.prod.yaml --env-file .env.prod up -d --build
           EOF
