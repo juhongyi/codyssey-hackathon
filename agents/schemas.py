@@ -1,9 +1,17 @@
 """Provider-independent data contracts shared with the backend."""
 
+import re
 from copy import deepcopy
 from typing import Any, Literal, Self
 
-from pydantic import BaseModel, Field, ModelWrapValidatorHandler, PrivateAttr, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    ModelWrapValidatorHandler,
+    PrivateAttr,
+    ValidationInfo,
+    model_validator,
+)
 
 
 class InterviewTurn(BaseModel):
@@ -11,13 +19,22 @@ class InterviewTurn(BaseModel):
     done: bool
 
     @model_validator(mode="after")
-    def validate_question(self) -> Self:
+    def validate_question(self, info: ValidationInfo) -> Self:
         if self.question is not None:
             self.question = self.question.strip()
         if self.done and self.question is not None:
             raise ValueError("A completed interview must have question=null")
         if not self.done and not self.question:
             raise ValueError("An ongoing interview needs a non-empty question")
+        if self.question:
+            if self.question.count("?") + self.question.count("？") > 1:
+                raise ValueError("Ask only one simple question about one topic")
+            normalized = re.sub(r"[\W_]+", "", self.question).casefold()
+            for previous in (info.context or {}).get("previous_questions", []):
+                if normalized == re.sub(r"[\W_]+", "", previous).casefold():
+                    raise ValueError(
+                        "Do not repeat an answered question; ask a focused follow-up instead"
+                    )
         return self
 
 
@@ -70,7 +87,26 @@ class GeneratedBoard(BaseModel):
         return deepcopy(self._raw_response)
 
     @model_validator(mode="after")
-    def validate_plans(self) -> Self:
+    def validate_plans(self, info: ValidationInfo) -> Self:
         if {plan.id for plan in self.plans} != {"A", "B", "C"}:
             raise ValueError("A board must contain distinct plans A, B, and C")
+        if (info.context or {}).get("check_path_quality"):
+            paths = []
+            for plan in self.plans:
+                if not plan.title.strip() or not plan.description.strip() or not plan.pieces:
+                    raise ValueError("Each path needs a title, explanation and concrete activities")
+                paths.append(
+                    frozenset(
+                        (
+                            piece.title.strip().casefold(),
+                            piece.description.strip().casefold(),
+                            piece.category,
+                        )
+                        for piece in plan.pieces
+                    )
+                )
+            if len(set(paths)) != 3:
+                raise ValueError(
+                    "Plans must have different activities, not just different names or dates"
+                )
         return self

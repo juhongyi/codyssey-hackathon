@@ -14,7 +14,13 @@ export function Timeline({
   const month = String(new Date(createdAt).getMonth() + 1).padStart(2, "0");
   if (variant === "board")
     return (
-      <section className="board-timeline" aria-label="5년 오딧세이 타임라인">
+      <section
+        className="board-timeline"
+        aria-label="5년 오딧세이 타임라인"
+        style={{
+          height: `${Math.max(300, 182 + Math.max(0, ...pieces.map((piece) => piece.lane)) * 104)}px`,
+        }}
+      >
         <div className="board-year-guides">
           {[0, 1, 2, 3, 4, 5].map((offset) => (
             <div
@@ -33,27 +39,29 @@ export function Timeline({
           ))}
         </div>
         <div className="board-timeline-baseline" />
-        {pieces.map((piece, index) => {
-          const width = Math.max(
-            22,
-            Math.min(34, (piece.durationMonths / 60) * 100),
-          );
-          return (
-            <div
-              key={piece.id}
-              className={`board-timeline-piece ${piece.category}`}
-              style={{
-                left: `${Math.min(100 - width, (piece.startMonth / 60) * 100)}%`,
-                width: `${width}%`,
-                top: `${index % 2 === 0 ? 49 + Math.floor(index / 6) * 8 : 169 + Math.floor(index / 6) * 8}px`,
-              }}
-            >
-              <CategoryChip category={piece.category} />
-              <strong>{piece.title}</strong>
-              <small>{piece.durationMonths}개월</small>
-            </div>
-          );
-        })}
+        <div className="board-timeline-tracks">
+          {pieces.map((piece) => {
+            const interval = `${piece.startMonth}~${piece.startMonth + piece.durationMonths}개월 · ${piece.durationMonths}개월`;
+            return (
+              <div
+                key={piece.id}
+                className={`board-timeline-piece ${piece.category}`}
+                role="img"
+                title={`${piece.title} · ${interval}`}
+                aria-label={`${piece.title} · ${interval}`}
+                style={{
+                  left: `${(piece.startMonth / 60) * 100}%`,
+                  width: `${(piece.durationMonths / 60) * 100}%`,
+                  top: `${49 + piece.lane * 104}px`,
+                }}
+              >
+                <CategoryChip category={piece.category} />
+                <strong>{piece.title}</strong>
+                <small>{piece.durationMonths}개월</small>
+              </div>
+            );
+          })}
+        </div>
       </section>
     );
   return (

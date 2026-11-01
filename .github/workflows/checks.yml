@@ -35,3 +35,5 @@ jobs:
             pnpm run depcruise
             pnpm run build
           '
+      - name: Browser regression checks (desktop and mobile)
+        run: docker compose --profile test run --build --rm --no-deps e2e

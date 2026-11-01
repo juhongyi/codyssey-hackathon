@@ -50,12 +50,12 @@ def board_data():
             {
                 "id": plan_id,
                 "label": f"Plan {plan_id}",
-                "title": "나의 미래",
+                "title": f"나의 미래 {plan_id}",
                 "description": "가치를 반영한 5년 계획",
                 "pieces": [
                     {
                         "id": "duplicate",
-                        "title": "작은 실험",
+                        "title": f"작은 실험 {plan_id}",
                         "category": "work",
                         "startMonth": 0,
                         "durationMonths": 6,
@@ -375,3 +375,75 @@ def test_http_failures_propagate_without_fabrication(monkeypatch, mock_http, ope
 def test_json_parser_rejects_non_objects():
     with pytest.raises(ValueError):
         llm.parse_json("[]")
+
+
+@pytest.fixture(
+    params=[
+        "잘 모르겠어요. 그냥 좀 쉬고 싶어요.",
+        "부모님 돌봄 때문에 이사할 수 없고 주 2시간, 월 3만원만 쓸 수 있어요.",
+        "안정적인 수입을 유지하고 싶지만 직장을 그만두고 여행도 하고 싶어요.",
+    ],
+    ids=["ambiguous", "constraints", "conflicting-wishes"],
+)
+def quality_history(request):
+    return [{"question": "무엇이 중요한가요?", "answer": request.param}]
+
+
+@pytest.mark.parametrize("question", ["무엇이 중요한가요?", "무엇을 원하나요? 언제 시작하나요?"])
+def test_interviewer_repairs_repeated_or_multi_question_turns(
+    monkeypatch, mock_http, question, quality_history
+):
+    monkeypatch.setenv("CODYSSEY_API_KEY", "key")
+    calls = []
+
+    def handle(request):
+        body = json.loads(request.content)
+        calls.append(body)
+        assert json.loads(body["messages"][1]["content"])["history"] == quality_history
+        assert "쉬운 일상 표현" in body["messages"][0]["content"]
+        assert "모호하거나 상충하는 점" in body["messages"][0]["content"]
+        return chat_response(
+            json.dumps(
+                {
+                    "question": question
+                    if len(calls) == 1
+                    else "최근 즐거웠던 일 하나만 들려주실래요?",
+                    "done": False,
+                }
+            )
+        )
+
+    mock_http(handle)
+    turn = run(interviewer.next_question(quality_history, 10))
+    assert turn.question == "최근 즐거웠던 일 하나만 들려주실래요?"
+    assert len(calls) == 2
+
+
+def test_planner_repairs_identical_paths_even_with_different_plan_names(
+    monkeypatch, mock_http, quality_history
+):
+    monkeypatch.setenv("CODYSSEY_API_KEY", "key")
+    calls = []
+
+    def handle(request):
+        calls.append(request)
+        body = json.loads(request.content)
+        assert json.loads(body["messages"][1]["content"])["history"] == quality_history
+        prompt = body["messages"][0]["content"]
+        for policy in (
+            "세 플랜 모두",
+            "판단할 기준",
+            "단계별 조각",
+            "가정이라고 표시",
+            "서로 다른 우선순위",
+        ):
+            assert policy in prompt
+        data = board_data()
+        if len(calls) == 1:
+            for plan in data["plans"]:
+                plan["pieces"] = deepcopy(data["plans"][0]["pieces"])
+        return chat_response(json.dumps(data))
+
+    mock_http(handle)
+    assert len(run(planner.generate_board(quality_history)).plans) == 3
+    assert len(calls) == 2

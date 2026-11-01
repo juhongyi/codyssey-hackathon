@@ -229,3 +229,5 @@ node_modules/
 
 # Next.js
 .next/
+test-results/
+playwright-report/

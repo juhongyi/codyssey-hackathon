@@ -382,6 +382,29 @@ def test_startup_retains_boards_audio_and_raw_plan(client):
         assert raw["plans"][0]["title"] == "Future"
 
 
+@pytest.mark.parametrize("assessment_first", [True, False])
+def test_alternating_assessment_and_piece_saves_survive_reload(client, assessment_first):
+    api, _, _ = client
+    interview = complete(api)
+    board = api.post(f"/api/interviews/{interview['id']}/board").json()
+    plan = board["plans"][0]
+    url = f"/api/boards/{board['id']}/plans/A"
+    edits = ["scores", "pieces"] if assessment_first else ["pieces", "scores"]
+    for field in edits:
+        if field == "scores":
+            plan["scores"] = {"resources": 0, "confidence": 7}
+        else:
+            plan["pieces"][0].update(
+                title="마지막 달 실험", startMonth=59, durationMonths=1, lane=3
+            )
+        assert api.put(url, json=plan).status_code == 200
+        assert api.get("/api/boards/current").json()["plans"][0] == plan
+    retained = api.get("/api/boards/current").json()["plans"][0]
+    assert retained["scores"] == {"resources": 0, "confidence": 7}
+    assert retained["pieces"][0]["startMonth"] == 59
+    assert retained["pieces"][0]["lane"] == 3
+
+
 def test_self_assessment_is_partial_persistent_and_plan_specific(client):
     api, _, _ = client
     interview = complete(api)
