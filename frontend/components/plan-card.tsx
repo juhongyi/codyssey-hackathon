@@ -43,7 +43,7 @@ export function PlanCard({
       <p>{plan.description}</p>
       {!sample && (
         <div className="board-timeline-heading">
-          <span>↗ 5년 오딧세이 타임라인</span>
+          <span>↗ 5년 오플 타임라인</span>
           <small>
             {date}~{endDate}
           </small>

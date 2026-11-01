@@ -100,10 +100,10 @@ export default function InterviewPage() {
   return (
     <main className={`interview-page phase-${phase}`}>
       <header className="interview-header">
-        <Link href="/" className="brand" aria-label="오딧세이 홈">
+        <Link href="/" className="brand" aria-label="오플 홈">
           <span className="brand-star">★</span>
           <span>
-            <strong>ODYSSEY</strong>
+            <strong>Ople</strong>
             <small>라이프 디자인 저널</small>
           </span>
         </Link>
@@ -130,7 +130,7 @@ export default function InterviewPage() {
           <div className="voice-orbit orbit-two" />
           <Stone active={recording || phase === "speaking"} />
         </div>
-        <span className="interview-caption">오디세이 인터뷰</span>
+        <span className="interview-caption">오플 인터뷰</span>
         <div className="voice-state">
           <i />
           {loading ? "인터뷰 준비" : stateLabel}
