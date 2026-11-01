@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-odyssey}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odyssey}
@@ -19,6 +20,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-odyssey}:${POSTGRES_PASSWORD:-odyssey}@db:5432/${POSTGRES_DB:-odyssey}
       CODYSSEY_API_BASE_URL: ${CODYSSEY_API_BASE_URL:-https://copa.codyssey.kr}
@@ -45,6 +47,7 @@ services:
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
