@@ -24,9 +24,7 @@ export function PlanCard({
       className={`plan-card ${sample ? "sample-plan-card" : "board-plan-card"}`}
     >
       <div className="plan-card-heading">
-        <span className={`plan-label plan-${plan.id}`}>
-          Plan {sample ? index + 1 : plan.id}
-        </span>
+        <span className={`plan-label plan-${plan.id}`}>Plan {index + 1}</span>
         <span className="eyebrow">
           {sample ? "이렇게 그려볼 수 있어요" : `생성 기준 ${date}`}
         </span>

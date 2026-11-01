@@ -55,7 +55,7 @@ export default function BoardPage() {
                   onClick={() => setActive(plan.id)}
                   className={active === plan.id ? "active" : ""}
                 >
-                  Plan {plan.id}
+                  Plan {["A", "B", "C"].indexOf(plan.id) + 1}
                 </a>
               ))}
             </nav>
