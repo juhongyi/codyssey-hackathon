@@ -270,6 +270,9 @@ textarea:focus-visible {
 .taped {
   position: relative;
 }
+.taped + .taped {
+  margin-top: 28px;
+}
 .sample-period {
   position: absolute;
   right: 17px;
