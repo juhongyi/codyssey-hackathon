@@ -1,7 +1,7 @@
 import { ArrowRight, Mic, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { PlanCard } from "../components/plan-card";
-import { samplePlan } from "../lib/mock-data";
+import { samplePlans } from "../lib/mock-data";
 
 export default function Home() {
   return (
@@ -41,10 +41,12 @@ export default function Home() {
         </section>
         <section className="preview-section">
           <h2 className="preview-sticker">이렇게 완성할 수 있어요</h2>
-          <div className="taped">
-            <span className="sample-period">2026.10 — 2031.10 · 5년</span>
-            <PlanCard plan={samplePlan} createdAt="2026-10-01" sample />
-          </div>
+          {samplePlans.map((plan) => (
+            <div className="taped" key={plan.id}>
+              <span className="sample-period">2026.10 — 2031.10 · 5년</span>
+              <PlanCard plan={plan} createdAt="2026-10-01" sample />
+            </div>
+          ))}
           <p className="caption">
             ✳ 예시 보드예요. 당신만의 보드는 이야기를 듣고 만들어요.
           </p>
