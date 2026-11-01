@@ -1,11 +1,3 @@
-# Pre-domain phase: serve HTTP(80) only, proxy everything to frontend:3000.
-:80 {
+ople.ink {
 	reverse_proxy frontend:3000
 }
-
-# After purchasing a domain: point its DNS A record to the Elastic IP, then
-# replace the address below. Caddy auto-issues/renews a Let's Encrypt cert
-# and serves HTTPS(443).
-# example.com {
-# 	reverse_proxy frontend:3000
-# }
